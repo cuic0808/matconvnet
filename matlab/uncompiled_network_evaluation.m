@@ -30,7 +30,7 @@ for layer_index = net.getLayerExecutionOrder
     params = {net.params(layer.paramIndexes).value};
     % calc output
     block = layer.block;
-    if isa(block, 'dagnn.Conv')
+    if block_type(block, 'Conv')
         input = inputs{1};
         % pad input
         input = [zeros(block.pad(1), size(input, 2), size(input, 3), size(input, 4), 'single'); ...
@@ -67,14 +67,14 @@ for layer_index = net.getLayerExecutionOrder
             output = bsxfun(@plus, output, ...
                 reshape(params{2}, [1 1 length(params{2})]));
         end
-    elseif isa(block, 'dagnn.ReLU')
+    elseif block_type(block, 'ReLU')
         output = max(inputs{1}, inputs{1} * block.leak);
-    elseif isa(block, 'dagnn.Reshape')
+    elseif block_type(block, 'Reshape')
         input_size = size(inputs{1});
         output = reshape(inputs{1}, [block.size input_size(end)]);
-    elseif isa(block, 'dagnn.Concat')
+    elseif block_type(block, 'Concat')
         output = cat(block.dim, inputs{:});
-    elseif isa(block, 'dagnn.SoftMax')
+    elseif block_type(block, 'SoftMax')
         maxval = max(inputs{1}, [], 3);
         output = exp(bsxfun(@minus, inputs{1}, maxval));
         output = bsxfun(@rdivide, output, sum(output, 3));
@@ -87,5 +87,5 @@ for layer_index = net.getLayerExecutionOrder
     end
 end
 
-% output
-% labels = squeeze(net.vars(net.getVarIndex(net.getOutputs())).value)';
+function match = block_type(block, cls)
+ match = isa(block, ['dagnn.' cls]) || isa(block, ['dagnn_bc.' cls]);
